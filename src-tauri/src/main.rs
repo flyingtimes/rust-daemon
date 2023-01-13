@@ -21,14 +21,24 @@ fn main() {
     let tray = SystemTray::new().with_menu(tray_menu);
     tauri::Builder::default()
         .setup(|_app| {
+            let resource_path = _app
+                .path_resolver()
+                .resolve_resource("./config/settings.json")
+                .expect("failed to resolve resource");
+            let afile = std::fs::File::open(&resource_path).unwrap();
+            let message: serde_json::Value = serde_json::from_reader(afile).unwrap();
+            let url_link  = format!("--proxy={}", message["url"].as_str().unwrap());
+            println!("{}",url_link);
 
-            tauri::async_runtime::spawn(async move {
+            let listen_link = format!("--listen=http://0.0.0.0:{}", message.get("port").unwrap() );
+            println!("{}",listen_link);
+            tauri::async_runtime::spawn(async {
                 let (_, _) = Command::new_sidecar("naive")
                     .expect("failed to setup `app` sidecar")
                     .args([
-                        "--proxy=https://user:pass@dark.21cnai.com",
-                        "--listen=http://0.0.0.0:1087",
-                        "--log",
+                        url_link,
+                        listen_link,
+                        "--log".to_string(),
                     ])
                     .spawn()
                     .expect("Failed to spawn packaged node");

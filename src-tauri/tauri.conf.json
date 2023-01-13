@@ -54,7 +54,7 @@
         "providerShortName": null,
         "signingIdentity": null
       },
-      "resources": [],
+      "resources": ["./config"],
       "shortDescription": "",
       "targets": "all",
       "windows": {
