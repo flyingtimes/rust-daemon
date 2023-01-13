@@ -27,7 +27,7 @@ fn main() {
                     .expect("failed to setup `app` sidecar")
                     .args([
                         "--proxy=https://user:pass@dark.21cnai.com",
-                        "--listen=http://127.0.0.1:1087",
+                        "--listen=http://0.0.0.0:1087",
                         "--log",
                     ])
                     .spawn()
