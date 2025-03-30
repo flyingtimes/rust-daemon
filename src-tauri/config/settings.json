@@ -1,4 +1,4 @@
 {
-  "proxy": "https://user:pass@dark.21cnai.com", 
-  "listen": "http://0.0.0.0:1087"
+  "proxy": "https://user:pass@example.com", 
+  "listen": "http://0.0.0.0:xxxx"
 }
