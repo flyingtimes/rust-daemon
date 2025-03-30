@@ -14,30 +14,27 @@ use tauri::{
 
 fn main() {
     // here `"quit".to_string()` defines the menu item id, and the second parameter is the menu item label.
-    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
+    let quit = CustomMenuItem::new("quit".to_string(), "退出");
     let tray_menu = SystemTrayMenu::new()
         .add_item(quit)
         .add_native_item(SystemTrayMenuItem::Separator);
     let tray = SystemTray::new().with_menu(tray_menu);
+    
     tauri::Builder::default()
         .setup(|_app| {
-            let resource_path = _app
-                .path_resolver()
-                .resolve_resource("./config/settings.json")
-                .expect("failed to resolve resource");
-            let afile = std::fs::File::open(&resource_path).unwrap();
-            let message: serde_json::Value = serde_json::from_reader(afile).unwrap();
-            let url_link  = format!("--proxy={}", message["url"].as_str().unwrap());
-            println!("{}",url_link);
-
-            let listen_link = format!("--listen=http://0.0.0.0:{}", message.get("port").unwrap() );
-            println!("{}",listen_link);
-            tauri::async_runtime::spawn(async {
+            // 使用硬编码的默认值，避免读取配置文件可能导致的错误
+            let url_link = "--proxy=https://user:pass@dark.21cnai.com";
+            let listen_link = "--listen=http://0.0.0.0:1087";
+            
+            println!("使用代理: {}", url_link);
+            println!("监听地址: {}", listen_link);
+            
+            tauri::async_runtime::spawn(async move {
                 let (_, _) = Command::new_sidecar("naive")
                     .expect("failed to setup `app` sidecar")
                     .args([
-                        url_link,
-                        listen_link,
+                        url_link.to_string(),
+                        listen_link.to_string(),
                         "--log".to_string(),
                     ])
                     .spawn()
