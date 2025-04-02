@@ -27,3 +27,4 @@ src-tauri/config/*
 # Added by cargo
 
 /target
+/src-tauri/config/*
