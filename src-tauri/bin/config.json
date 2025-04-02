@@ -1,0 +1,4 @@
+{
+    "proxy": "https://user:pass@example.com", 
+    "listen": "http://0.0.0.0:xxxx"
+  }

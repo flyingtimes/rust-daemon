@@ -38,7 +38,6 @@
       ],
       "resources": [],
       "externalBin": [
-        "bin/naive-x86_64-apple-darwin",
         "bin/naive"
       ],
       "copyright": "",
