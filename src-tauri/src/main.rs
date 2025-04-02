@@ -70,8 +70,8 @@ fn write_config(config: &Config) -> Result<(), String> {
 // 获取配置文件路径
 fn get_config_path() -> PathBuf {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    path.push("bin");
-    path.push("config.json");
+    path.push("config");
+    path.push("setting.json");
     path
 }
 
