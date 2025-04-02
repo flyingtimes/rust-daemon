@@ -23,6 +23,17 @@
         "open": false,
         "sidecar": true,
         "execute": true
+      },
+      "window": {
+        "all": false,
+        "close": true,
+        "hide": true,
+        "show": true,
+        "maximize": false,
+        "minimize": false,
+        "unmaximize": false,
+        "unminimize": false,
+        "startDragging": false
       }
     },
     "bundle": {
@@ -60,7 +71,18 @@
       "iconPath": "icons/icon.png",
       "iconAsTemplate": true
     },
-    "windows": [],
+    "windows": [
+      {
+        "fullscreen": false,
+        "height": 400,
+        "resizable": false,
+        "title": "配置",
+        "width": 400,
+        "visible": false,
+        "label": "config",
+        "url": "config.html"
+      }
+    ],
     "security": {
       "csp": null
     },

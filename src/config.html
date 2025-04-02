@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>配置</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+    .container {
+      max-width: 400px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      margin-top: 0;
+      color: #2c3e50;
+      text-align: center;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+    .buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.2s;
+    }
+    button.save {
+      background-color: #4CAF50;
+      color: white;
+    }
+    button.save:hover {
+      background-color: #45a049;
+    }
+    button.cancel {
+      background-color: #f1f1f1;
+      color: #333;
+    }
+    button.cancel:hover {
+      background-color: #e7e7e7;
+    }
+    .status {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 4px;
+      text-align: center;
+      display: none;
+    }
+    .success {
+      background-color: #dff0d8;
+      color: #3c763d;
+    }
+    .error {
+      background-color: #f2dede;
+      color: #a94442;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>代理配置</h2>
+    <div class="form-group">
+      <label for="proxy">代理地址</label>
+      <input type="text" id="proxy" placeholder="例如：https://user:pass@example.com" />
+    </div>
+    <div class="form-group">
+      <label for="listen">监听地址</label>
+      <input type="text" id="listen" placeholder="例如：http://0.0.0.0:1087" />
+    </div>
+    <div id="status" class="status"></div>
+    <div class="buttons">
+      <button class="cancel" id="cancel">取消</button>
+      <button class="save" id="save">保存</button>
+    </div>
+  </div>
+
+  <script>
+    const { invoke } = window.__TAURI__.tauri;
+    const { appWindow } = window.__TAURI__.window;
+
+    // 获取元素
+    const proxyInput = document.getElementById('proxy');
+    const listenInput = document.getElementById('listen');
+    const saveButton = document.getElementById('save');
+    const cancelButton = document.getElementById('cancel');
+    const statusDiv = document.getElementById('status');
+
+    // 加载配置
+    async function loadConfig() {
+      try {
+        const config = await invoke('get_config_data');
+        proxyInput.value = config.proxy;
+        listenInput.value = config.listen;
+      } catch (error) {
+        showStatus('加载配置失败: ' + error, false);
+      }
+    }
+
+    // 保存配置
+    async function saveConfig() {
+      const proxy = proxyInput.value.trim();
+      const listen = listenInput.value.trim();
+
+      if (!proxy || !listen) {
+        showStatus('代理地址和监听地址不能为空', false);
+        return;
+      }
+
+      try {
+        await invoke('save_config', { proxy, listen });
+        showStatus('配置已保存，重启应用后生效', true);
+        setTimeout(() => {
+          appWindow.close();
+        }, 2000);
+      } catch (error) {
+        showStatus('保存配置失败: ' + error, false);
+      }
+    }
+
+    // 显示状态信息
+    function showStatus(message, isSuccess) {
+      statusDiv.textContent = message;
+      statusDiv.className = 'status ' + (isSuccess ? 'success' : 'error');
+      statusDiv.style.display = 'block';
+
+      setTimeout(() => {
+        statusDiv.style.display = 'none';
+      }, 5000);
+    }
+
+    // 事件监听
+    document.addEventListener('DOMContentLoaded', loadConfig);
+    saveButton.addEventListener('click', saveConfig);
+    cancelButton.addEventListener('click', () => appWindow.close());
+  </script>
+</body>
+</html>
