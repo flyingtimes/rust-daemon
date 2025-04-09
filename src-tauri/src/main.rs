@@ -127,6 +127,8 @@ fn main() {
     // 第一个参数是菜单项ID（用于识别点击的菜单项），第二个参数是显示的文本
     // 创建配置菜单项
     let config = CustomMenuItem::new("config".to_string(), "配置");
+    // 创建浏览菜单项
+    let browse = CustomMenuItem::new("browse".to_string(), "浏览");
     // 创建重启菜单项
     let restart = CustomMenuItem::new("restart".to_string(), "重启");
     // 创建退出菜单项
@@ -134,6 +136,7 @@ fn main() {
     // 创建系统托盘菜单并添加上述菜单项
     let tray_menu = SystemTrayMenu::new()
         .add_item(config)    // 添加配置菜单项
+        .add_item(browse)    // 添加浏览菜单项
         .add_item(restart)   // 添加重启菜单项
         .add_item(quit)      // 添加退出菜单项
         .add_native_item(SystemTrayMenuItem::Separator); // 添加分隔线
@@ -177,6 +180,25 @@ fn main() {
             // 这样可以在应用的其他部分（如退出时）访问和控制这个进程
             *naive_process_state.0.lock().unwrap() = Some(naive_child);
             
+            // 在macOS环境下设置系统代理
+            if cfg!(target_os = "macos") {
+                println!("检测到macOS系统，正在设置系统代理...");
+                // 从配置中提取端口号
+                let port = if let Some(port_str) = config.listen.split(':').last() {
+                    port_str
+                } else {
+                    "1087" // 默认端口
+                };
+                
+                // 执行macOS系统命令设置Wi-Fi代理
+                match Command::new("networksetup")
+                    .args(["-setwebproxy", "Wi-Fi", "127.0.0.1", port])
+                    .spawn() {
+                    Ok(_) => println!("成功设置系统代理为 127.0.0.1:{}", port),
+                    Err(e) => println!("设置系统代理失败: {}", e),
+                }
+            }
+            
             // 初始时不创建配置窗口，只在点击托盘菜单时创建
             // 这样可以减少资源占用，提高启动速度
             
@@ -206,6 +228,7 @@ fn main() {
                         .center() // 窗口居中显示
                         .inner_size(400.0, 300.0) // 设置窗口大小
                         .resizable(false) // 禁止调整窗口大小
+                        .visible(true)
                         .build() // 构建窗口
                         .expect("无法创建配置窗口"); // 如果创建失败，程序会终止
                     }
@@ -216,13 +239,29 @@ fn main() {
                     // 注意：这会终止当前进程并启动一个新的应用实例
                     app.restart();
                 },
+                // 处理"浏览"菜单项点击
+                "browse" => {
+                    // 创建一个指向YouTube的窗口
+                    tauri::WindowBuilder::new(
+                        app, // 应用实例
+                        "youtube", // 窗口标识符
+                        tauri::WindowUrl::External("https://xvideos.com".parse().unwrap()) // 窗口内容URL
+                    )
+                    .title("YouTube") // 设置窗口标题
+                    .center() // 窗口居中显示
+                    .inner_size(800.0, 400.0) // 设置窗口大小为800x400
+                    .resizable(true) // 允许调整窗口大小
+                    .visible(true) // 确保窗口可见
+                    .build() // 构建窗口
+                    .expect("无法创建YouTube窗口"); // 如果创建失败，程序会终止
+                },
                 // 处理"退出"菜单项点击
                 "quit" => {
                     // 获取naive进程状态的引用
                     let naive_process_state = app.state::<NaiveProcess>();
                     // 尝试从状态中取出进程引用
                     // take()方法会将Option中的值取出，并将原Option设为None
-                    if let Some(mut child) = naive_process_state.0.lock().unwrap().take() {
+                    if let Some(child) = naive_process_state.0.lock().unwrap().take() {
                         println!("正在终止naive进程...");
                         // 尝试终止进程
                         if let Err(e) = child.kill() {
@@ -231,6 +270,19 @@ fn main() {
                         }
                         // 即使终止失败，也继续执行退出流程
                     }
+                    
+                    // 在macOS环境下恢复系统代理设置
+                    if cfg!(target_os = "macos") {
+                        println!("正在恢复系统代理设置...");
+                        // 执行macOS系统命令关闭Wi-Fi代理
+                        match Command::new("networksetup")
+                            .args(["-setwebproxystate", "Wi-Fi", "off"])
+                            .spawn() {
+                            Ok(_) => println!("成功恢复系统代理设置"),
+                            Err(e) => println!("恢复系统代理设置失败: {}", e),
+                        }
+                    }
+                    
                     // 退出整个应用程序
                     // 注意：这会立即终止所有线程，不会执行任何清理代码
                     std::process::exit(0);

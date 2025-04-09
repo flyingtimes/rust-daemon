@@ -84,7 +84,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; connect-src 'self' https://youtube.com https://*.youtube.com https://*.googlevideo.com; img-src 'self' https: data:; script-src 'self' https://youtube.com https://*.youtube.com; style-src 'self' 'unsafe-inline' https://youtube.com https://*.youtube.com; frame-src https://youtube.com https://*.youtube.com"
     },
     "updater": {
       "active": false
