@@ -84,7 +84,8 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' https://youtube.com https://*.youtube.com https://*.googlevideo.com; img-src 'self' https: data:; script-src 'self' https://youtube.com https://*.youtube.com; style-src 'self' 'unsafe-inline' https://youtube.com https://*.youtube.com; frame-src https://youtube.com https://*.youtube.com"
+      "dangerousDisableAssetCspModification": ["style-src"],
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline' https://www.xvideos.com https://*.xvideos.com; img-src 'self' asset: https://www.xvideos.com https://*.xvideos.com https://*.xvideos-cdn.com; script-src 'self' 'unsafe-inline' https://www.xvideos.com https://*.xvideos.com; frame-src https://www.xvideos.com https://*.xvideos.com; media-src https://www.xvideos.com https://*.xvideos.com https://*.xvideos-cdn.com; connect-src 'self' https://www.xvideos.com https://*.xvideos.com https://*.xvideos-cdn.com; font-src 'self' https://www.xvideos.com https://*.xvideos.com"
     },
     "updater": {
       "active": false

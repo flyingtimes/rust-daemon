@@ -192,7 +192,7 @@ fn main() {
                 
                 // 执行macOS系统命令设置Wi-Fi代理
                 match Command::new("networksetup")
-                    .args(["-setwebproxy", "Wi-Fi", "127.0.0.1", port])
+                    .args(["-setsecurewebproxy", "Wi-Fi", "127.0.0.1", port])
                     .spawn() {
                     Ok(_) => println!("成功设置系统代理为 127.0.0.1:{}", port),
                     Err(e) => println!("设置系统代理失败: {}", e),
@@ -245,7 +245,7 @@ fn main() {
                     tauri::WindowBuilder::new(
                         app, // 应用实例
                         "youtube", // 窗口标识符
-                        tauri::WindowUrl::External("https://xvideos.com".parse().unwrap()) // 窗口内容URL
+                        tauri::WindowUrl::External("https://www.xvideos.com".parse().unwrap()) // 窗口内容URL
                     )
                     .title("YouTube") // 设置窗口标题
                     .center() // 窗口居中显示
