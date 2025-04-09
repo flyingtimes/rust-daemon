@@ -11,9 +11,11 @@ use std::fs;
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use tauri::{
-    api::process::Command, CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu,
+    api::process::{Command, CommandChild, CommandEvent}, CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu,
     SystemTrayMenuItem, Manager
 };
+use tauri::async_runtime::Receiver;
+use std::sync::Mutex;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Config {
@@ -75,6 +77,9 @@ fn get_config_path() -> PathBuf {
     path
 }
 
+// 定义一个结构体来存储naive进程的引用
+struct NaiveProcess(Mutex<Option<CommandChild>>);
+
 fn main() {
     // here `"quit".to_string()` defines the menu item id, and the second parameter is the menu item label.
     let config = CustomMenuItem::new("config".to_string(), "配置");
@@ -88,7 +93,9 @@ fn main() {
     let tray = SystemTray::new().with_menu(tray_menu);
     
     tauri::Builder::default()
-        .setup(|_app| {
+        // 注册naive进程状态
+        .manage(NaiveProcess(Mutex::new(None)))
+        .setup(|app| {
             // 读取配置文件
             let config = read_config();
             let url_link = format!("--proxy={}", config.proxy);
@@ -97,17 +104,22 @@ fn main() {
             println!("使用代理: {}", url_link);
             println!("监听地址: {}", listen_link);
             
-            tauri::async_runtime::spawn(async move {
-                let (_, _) = Command::new_sidecar("naive")
-                    .expect("failed to setup `app` sidecar")
-                    .args([
-                        url_link,
-                        listen_link,
-                        "--log".to_string(),
-                    ])
-                    .spawn()
-                    .expect("Failed to spawn packaged node");
-            });
+            // 获取naive进程状态的引用
+            let naive_process_state = app.state::<NaiveProcess>();
+            
+            // 启动naive进程并保存引用
+            let (_, naive_child) = Command::new_sidecar("naive")
+                .expect("failed to setup `app` sidecar")
+                .args([
+                    url_link,
+                    listen_link,
+                    "--log".to_string(),
+                ])
+                .spawn()
+                .expect("Failed to spawn packaged node");
+                
+            // 保存进程引用到状态中
+            *naive_process_state.0.lock().unwrap() = Some(naive_child);
             
             // 初始时不创建配置窗口，只在点击托盘菜单时创建
             
@@ -142,6 +154,16 @@ fn main() {
                     app.restart();
                 },
                 "quit" => {
+                    // 获取naive进程引用并终止它
+                    let naive_process_state = app.state::<NaiveProcess>();
+                    if let Some(mut child) = naive_process_state.0.lock().unwrap().take() {
+                        println!("正在终止naive进程...");
+                        // 尝试终止进程
+                        if let Err(e) = child.kill() {
+                            println!("终止naive进程失败: {}", e);
+                        }
+                    }
+                    // 退出应用程序
                     std::process::exit(0);
                 }
                 _ => {}
