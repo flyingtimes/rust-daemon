@@ -85,7 +85,7 @@
     ],
     "security": {
       "dangerousDisableAssetCspModification": ["style-src"],
-      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline' https://www.xvideos.com https://*.xvideos.com; img-src 'self' asset: https://www.xvideos.com https://*.xvideos.com https://*.xvideos-cdn.com; script-src 'self' 'unsafe-inline' https://www.xvideos.com https://*.xvideos.com; frame-src https://www.xvideos.com https://*.xvideos.com; media-src https://www.xvideos.com https://*.xvideos.com https://*.xvideos-cdn.com; connect-src 'self' https://www.xvideos.com https://*.xvideos.com https://*.xvideos-cdn.com; font-src 'self' https://www.xvideos.com https://*.xvideos.com"
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline' https://www.youtube.com https://*.youtube.com; img-src 'self' asset: https://www.youtube.com https://*.youtube.com https://*.youtube-cdn.com; script-src 'self' 'unsafe-inline' https://www.youtube.com https://*.youtube.com; frame-src https://www.youtube.com https://*.youtube.com; media-src https://www.youtube.com https://*.youtube.com https://*.youtube-cdn.com; connect-src 'self' https://www.youtube.com https://*.youtube.com https://*.youtube-cdn.com; font-src 'self' https://www.youtube.com https://*.youtube.com"
     },
     "updater": {
       "active": false

@@ -98,6 +98,10 @@
       <label for="listen">监听地址</label>
       <input type="text" id="listen" placeholder="例如：http://0.0.0.0:1087" />
     </div>
+    <div class="form-group">
+      <label for="openaikey">OpenAI API密钥</label>
+      <input type="text" id="privatekey" placeholder="sk-... 或 sk-or-..." />
+    </div>
     <div id="status" class="status"></div>
     <div class="buttons">
       <button class="cancel" id="cancel">取消</button>
@@ -112,39 +116,29 @@
     // 获取元素
     const proxyInput = document.getElementById('proxy');
     const listenInput = document.getElementById('listen');
+    const privatekeyInput = document.getElementById('privatekey');
     const saveButton = document.getElementById('save');
     const cancelButton = document.getElementById('cancel');
     const statusDiv = document.getElementById('status');
 
     // 加载配置
     async function loadConfig() {
-      try {
-        const config = await invoke('get_config_data');
-        proxyInput.value = config.proxy;
-        listenInput.value = config.listen;
-      } catch (error) {
-        showStatus('加载配置失败: ' + error, false);
-      }
+      const config = await invoke('get_config_data');
+      proxyInput.value = config.proxy;
+      listenInput.value = config.listen;
+      privatekeyInput.value = config.openaikey || "";
     }
 
     // 保存配置
     async function saveConfig() {
       const proxy = proxyInput.value.trim();
       const listen = listenInput.value.trim();
-
-      if (!proxy || !listen) {
-        showStatus('代理地址和监听地址不能为空', false);
-        return;
-      }
-
+      const openaikey = privatekeyInput.value.trim();
       try {
-        await invoke('save_config', { proxy, listen });
-        showStatus('配置已保存，重启应用后生效', true);
-        setTimeout(() => {
-          appWindow.close();
-        }, 2000);
-      } catch (error) {
-        showStatus('保存配置失败: ' + error, false);
+        await invoke('save_config', { proxy, listen, openaikey });
+        showStatus('保存成功', true);
+      } catch (err) {
+        showStatus('保存失败: ' + err, false);
       }
     }
 

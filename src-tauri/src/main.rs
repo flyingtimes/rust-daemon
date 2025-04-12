@@ -37,6 +37,8 @@ struct Config {
     proxy: String,
     // 本地监听地址
     listen: String,
+    // OpenAI API key
+    openaikey: String
 }
 
 // 为Config实现Default特性，提供默认配置值
@@ -47,6 +49,8 @@ impl Default for Config {
             proxy: "https://user:pass@example.com".to_string(),
             // 默认本地监听地址和端口
             listen: "http://0.0.0.0:1087".to_string(),
+            // 默认openai_key为空
+            openaikey: "123".to_string(),
         }
     }
 }
@@ -131,14 +135,18 @@ fn main() {
     let browse = CustomMenuItem::new("browse".to_string(), "浏览");
     // 创建重启菜单项
     let restart = CustomMenuItem::new("restart".to_string(), "重启");
+    // 创建对话菜单项
+    let dialog = CustomMenuItem::new("dialog".to_string(), "对话");
     // 创建退出菜单项
     let quit = CustomMenuItem::new("quit".to_string(), "退出");
+    
     // 创建系统托盘菜单并添加上述菜单项
     let tray_menu = SystemTrayMenu::new()
         .add_item(config)    // 添加配置菜单项
         .add_item(browse)    // 添加浏览菜单项
         .add_item(restart)   // 添加重启菜单项
         .add_item(quit)      // 添加退出菜单项
+        .add_item(dialog)    // 添加对话菜单项
         .add_native_item(SystemTrayMenuItem::Separator); // 添加分隔线
     // 创建系统托盘并设置菜单
     let tray = SystemTray::new().with_menu(tray_menu);
@@ -233,6 +241,26 @@ fn main() {
                         .expect("无法创建配置窗口"); // 如果创建失败，程序会终止
                     }
                 },
+                // 处理"对话"菜单项点击
+                "dialog" => {
+                    if let Some(dialog_window) = app.get_window("dialog") {
+                        dialog_window.show().unwrap();
+                        dialog_window.set_focus().unwrap();
+                    } else {
+                        tauri::WindowBuilder::new(
+                            app,
+                            "dialog",
+                            tauri::WindowUrl::App("dialog.html".into())
+                        )
+                        .title("对话")
+                        .center()
+                        .inner_size(420.0, 420.0)
+                        .resizable(false)
+                        .visible(true)
+                        .build()
+                        .expect("无法创建对话窗口");
+                    }
+                },
                 // 处理"重启"菜单项点击
                 "restart" => {
                     // 重启整个应用程序
@@ -245,7 +273,7 @@ fn main() {
                     tauri::WindowBuilder::new(
                         app, // 应用实例
                         "youtube", // 窗口标识符
-                        tauri::WindowUrl::External("https://www.xvideos.com".parse().unwrap()) // 窗口内容URL
+                        tauri::WindowUrl::External("https://youtube.com".parse().unwrap()) // 窗口内容URL
                     )
                     .title("YouTube") // 设置窗口标题
                     .center() // 窗口居中显示
@@ -297,7 +325,8 @@ fn main() {
         // 这些命令可以从JavaScript通过invoke函数调用
         .invoke_handler(tauri::generate_handler![
             save_config,     // 注册保存配置命令
-            get_config_data  // 注册获取配置数据命令
+            get_config_data,  // 注册获取配置数据命令
+            openai_chat      // 注册OpenAI对话命令
         ])
         // 运行应用程序
         // generate_context!宏会生成应用程序上下文，包含tauri.conf.json中的配置
@@ -318,15 +347,45 @@ fn get_config_data() -> Result<Config, String> {
 // Tauri命令：保存配置数据
 // #[tauri::command]宏标记这个函数可以从前端JavaScript调用
 #[tauri::command]
-fn save_config(proxy: String, listen: String) -> Result<(), String> {
-    // 使用传入的参数创建新的Config对象
+fn save_config(proxy: String, listen: String, openaikey: String) -> Result<(), String> {
     let config = Config {
-        proxy,   // 代理服务器地址
-        listen,  // 本地监听地址
+        proxy,
+        listen,
+        openaikey,
     };
-    // 调用write_config函数保存配置
-    // ?操作符会在出错时提前返回错误
-    write_config(&config)?;
-    // 返回成功
+        write_config(&config)?;
+    
     Ok(())
+}
+
+// Tauri命令：与OpenAI API对话
+#[tauri::command]
+fn openai_chat(prompt: String) -> Result<String, String> {
+
+    use reqwest::blocking::Client;
+    use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
+    let config = read_config();
+    if config.openaikey.is_empty() {
+        return Err("未设置OpenAI API Key，请在配置中填写。".to_string());
+    }
+    let openai_key = config.openaikey;
+
+    let client = Client::new();
+    let body = serde_json::json!({
+        "model": "openrouter/optimus-alpha",
+        "messages": [ { "role": "user", "content": prompt.trim() } ],
+        "max_tokens": 8192,
+        "temperature": 0.8
+    });
+
+    let resp = client.post("https://openrouter.ai/api/v1/chat/completions")
+        .header(AUTHORIZATION, format!("Bearer {}", openai_key))
+        .header(CONTENT_TYPE, "application/json")
+        .json(&body)
+        .send()
+        .map_err(|e| format!("请求OpenAI出错: {}", e))?;
+    let json: serde_json::Value = resp.json().map_err(|e| format!("解析返回JSON失败: {}", e))?;
+    let content = json["choices"][0]["message"]["content"].as_str()
+        .ok_or("OpenAI响应格式异常/无内容返回")?;
+    Ok(content.to_string())
 }

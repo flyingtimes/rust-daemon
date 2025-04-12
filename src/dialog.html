@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>对话</title>
+</head>
+<body>
+  <div class="container">
+    <h2>对话</h2>
+    <div id="input-area" style="display:flex; gap:10px; margin-bottom:16px;">
+      <textarea id="chatInput" placeholder="请输入您的问题..." style="flex:1;min-height:48px;resize:vertical;border-radius:4px;border:1px solid #ddd;padding:8px;font-size:15px;"></textarea>
+      <button id="sendBtn" style="padding:8px 22px; font-size:15px; border-radius:4px; background:#087ea4; color:#fff; border:none; cursor:pointer;">确认</button>
+    </div>
+    <div id="result" style="margin-top:10px; min-height:40px; white-space:pre-wrap; color:#222; background:#f3f3fd; border-radius:4px; padding:12px;"></div>
+  </div>
+  <script>
+    const sendBtn = document.getElementById('sendBtn');
+    const chatInput = document.getElementById('chatInput');
+    const resultDiv = document.getElementById('result');
+    sendBtn.onclick = async function () {
+      const text = chatInput.value.trim();
+      if (!text) { resultDiv.textContent = '请输入内容'; return; }
+      sendBtn.disabled = true;
+      resultDiv.textContent = '请求中...';
+      try {
+        const response = await window.__TAURI__.invoke('openai_chat', { prompt: text });
+        resultDiv.textContent = response;
+      } catch (e) {
+        resultDiv.textContent = '请求出错：' + (e && e.toString());
+      } finally { sendBtn.disabled = false; }
+    };
+  </script>
+</body>
+</html>
